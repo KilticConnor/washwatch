@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WashWatch">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>WashWatch</title>
+<style>
+:root{--bg:#0b0d10;--card:#151922;--card2:#1b2130;--text:#f5f7fb;--muted:#8f9bad;--blue:#2388f4;--green:#45d483;--red:#ff6577;--line:#2a3242}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{overscroll-behavior:none}
+body{margin:0;background:linear-gradient(180deg,#090b0e,#101722);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+.wrap{max-width:720px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(30px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:end;margin-bottom:15px}h1{font-size:30px;margin:0;letter-spacing:-1px}.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.pill{font-size:12px;background:#172232;color:#9ecbff;border:1px solid #29496b;padding:7px 10px;border-radius:999px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.card{background:rgba(21,25,34,.96);border:1px solid var(--line);border-radius:17px;padding:14px;box-shadow:0 10px 30px #0003}
+.big{font-size:28px;font-weight:800;letter-spacing:-.7px}.label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+.hero{margin:14px 0;text-align:center;padding:18px}.timer{font-variant-numeric:tabular-nums;font-size:46px;font-weight:850;letter-spacing:-1.5px;margin:8px 0 17px}
+button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulation}.pass{width:215px;height:215px;border-radius:50%;background:radial-gradient(circle at 35% 28%,#70bdff,#1477df 70%);box-shadow:0 0 0 8px #1a2d43,0 18px 45px #006ee755;font-size:25px;font-weight:900;letter-spacing:.5px;transition:.07s transform}.pass:active{transform:scale(.955)}
+.hint{color:var(--muted);font-size:13px;line-height:1.45;margin-top:17px;min-height:38px}.actions{display:flex;gap:9px;margin-top:14px}.secondary{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 8px;font-weight:700}.danger{color:#ff9aa5}
+.section{margin-top:18px}.section h2{font-size:18px;margin:0 0 9px}.row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}.row:last-child{border:0}.muted{color:var(--muted)}
+input{width:75px;background:#0d1118;color:white;border:1px solid #39445a;border-radius:9px;padding:8px;font-size:17px;text-align:center}
+.estimate{display:flex;align-items:center;justify-content:space-between;gap:10px}.estimate strong{font-size:24px}
+.tabs{display:flex;gap:7px;margin:17px 0 10px}.tab{flex:1;padding:10px 4px;border-radius:11px;background:#171c25;color:var(--muted);border:1px solid var(--line);font-size:13px;font-weight:750}.tab.active{color:white;background:#21344c;border-color:#315b86}
+.hidden{display:none}.empty{color:var(--muted);text-align:center;padding:25px 10px}.sessionItem{padding:12px 0;border-bottom:1px solid var(--line)}.sessionItem:last-child{border:0}.sessionTop{display:flex;justify-content:space-between;gap:8px;font-weight:750}.sessionMeta{color:var(--muted);font-size:12px;margin-top:5px}.good{color:var(--green)}.bad{color:var(--red)}
+.banner{display:none;background:#152437;border:1px solid #2e5e8e;border-radius:14px;padding:11px 13px;margin-bottom:12px;font-size:13px;line-height:1.35}.footer{color:#687386;font-size:11px;text-align:center;margin-top:18px;line-height:1.45}
+</style>
+</head>
+<body><div class="wrap">
+<header><div><h1>🚿 WashWatch</h1><div class="sub" id="dateLine"></div></div><div class="pill" id="sessionState">READY</div></header>
+<div class="banner" id="installHint">On iPhone: open this page in Safari, tap <b>Share</b>, then <b>Add to Home Screen</b>. After that, WashWatch behaves like its own little app.</div>
+<div class="tabs"><button class="tab active" data-tab="live">LIVE</button><button class="tab" data-tab="history">HISTORY</button><button class="tab" data-tab="insights">INSIGHTS</button></div>
+
+<section id="live">
+<div class="grid">
+<div class="card"><div class="label">Cars timed</div><div class="big" id="cars">0</div></div>
+<div class="card"><div class="label">Live average</div><div class="big" id="avg">—</div></div>
+<div class="card"><div class="label">Last car</div><div class="big" id="last">—</div></div>
+<div class="card"><div class="label">Median</div><div class="big" id="median">—</div></div>
+</div>
+<div class="card hero">
+<div class="label">Time since last car</div><div class="timer" id="timer">0:00.0</div>
+<button class="pass" id="pass">CAR<br>PASSED</button>
+<div class="hint" id="hint">First tap starts the session. Every tap after that records the interval since the previous car.</div>
+<div class="actions"><button class="secondary" id="undo">↶ Undo</button><button class="secondary danger" id="finish">Finish & Save</button></div>
+</div>
+<div class="card estimate"><div><div class="label">Cars ahead of me</div><input id="ahead" type="number" min="0" inputmode="numeric" value="0"></div><div style="text-align:right"><div class="label">Estimated wait</div><strong id="wait">—</strong></div></div>
+<div class="grid section"><div class="card"><div class="label">Fastest</div><div class="big good" id="fast">—</div></div><div class="card"><div class="label">Slowest</div><div class="big bad" id="slow">—</div></div></div>
+</section>
+
+<section id="history" class="hidden"><div class="card"><h2>Saved visits</h2><div id="historyList"></div></div><div class="actions"><button class="secondary" id="export">Export Backup</button><button class="secondary danger" id="clear">Clear History</button></div></section>
+
+<section id="insights" class="hidden">
+<div class="grid"><div class="card"><div class="label">All-time visits</div><div class="big" id="visitCount">0</div></div><div class="card"><div class="label">Intervals logged</div><div class="big" id="intervalCount">0</div></div></div>
+<div class="card section"><h2>Average by day</h2><div id="dayStats"></div></div>
+<div class="card section"><h2>Average by time of day</h2><div id="timeStats"></div></div>
+<div class="card section"><h2>Best observed window</h2><div id="bestWindow" class="empty">Log a few visits and I'll start judging your car-wash decisions.</div></div>
+</section>
+<div class="footer">Stored locally on this device. Export a backup occasionally if this becomes a peer-reviewed car-wash study.</div>
+</div>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+let intervals=[], startedDate=null, lastWall=null, tick=null;
+const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const median=a=>{if(!a.length)return null;const b=[...a].sort((x,y)=>x-y),n=b.length;return n%2?b[(n-1)/2]:(b[n/2-1]+b[n/2])/2};
+const fmt=ms=>{if(ms==null||!Number.isFinite(ms))return"—";let t=Math.max(0,ms)/1000,m=Math.floor(t/60),s=t-m*60;return `${m}:${s.toFixed(s<10?1:0).padStart(s<10?4:2,"0")}`};
+const bucket=h=>h<6?"Overnight":h<10?"Morning (6–10)":h<12?"Late morning (10–12)":h<14?"Midday (12–2)":h<17?"Afternoon (2–5)":h<20?"Evening (5–8)":"Night (8+)";
+function history(){try{return JSON.parse(localStorage.getItem("washwatch.history")||"[]")}catch(e){return[]}}
+function saveHistory(v){localStorage.setItem("washwatch.history",JSON.stringify(v))}
+function render(){
+ $("cars").textContent=intervals.length;$("avg").textContent=fmt(mean(intervals));$("median").textContent=fmt(median(intervals));$("last").textContent=intervals.length?fmt(intervals.at(-1)):"—";
+ $("fast").textContent=intervals.length?fmt(Math.min(...intervals)):"—";$("slow").textContent=intervals.length?fmt(Math.max(...intervals)):"—";
+ const n=Math.max(0,parseInt($("ahead").value)||0);$("wait").textContent=intervals.length&&n?fmt(mean(intervals)*n):"—";
+}
+function startTicker(){clearInterval(tick);tick=setInterval(()=>{if(lastWall!==null)$("timer").textContent=fmt(Date.now()-lastWall)},100)}
+$("pass").addEventListener("click",()=>{
+ const now=Date.now();
+ if(!startedDate){startedDate=new Date();lastWall=now;$("sessionState").textContent="TIMING";$("hint").textContent="Started. Next tap records Car #1.";startTicker();return}
+ intervals.push(now-lastWall);lastWall=now;$("hint").textContent=`Car #${intervals.length} recorded: ${fmt(intervals.at(-1))}`;render();
+ if(navigator.vibrate)navigator.vibrate(20);
+});
+$("undo").addEventListener("click",()=>{if(intervals.length){intervals.pop();$("hint").textContent="Last recorded interval removed.";render()}});
+$("ahead").addEventListener("input",render);
+$("finish").addEventListener("click",()=>{
+ if(!startedDate||!intervals.length){alert("Time at least one complete car interval before saving.");return}
+ const d=startedDate,h=history();h.unshift({id:Date.now(),date:d.toISOString(),day:d.toLocaleDateString(undefined,{weekday:"long"}),hour:d.getHours(),bucket:bucket(d.getHours()),intervals:[...intervals],avg:mean(intervals),median:median(intervals),fast:Math.min(...intervals),slow:Math.max(...intervals)});
+ saveHistory(h);intervals=[];startedDate=null;lastWall=null;clearInterval(tick);$("timer").textContent="0:00.0";$("hint").textContent="Saved. First tap starts a new session.";$("sessionState").textContent="SAVED";render();renderHistory();renderInsights();setTimeout(()=>$("sessionState").textContent="READY",1200);
+});
+function renderHistory(){
+ const h=history(),el=$("historyList");
+ if(!h.length){el.innerHTML='<div class="empty">No saved visits yet. Go gather some gloriously unnecessary data.</div>';return}
+ el.innerHTML=h.map(s=>`<div class="sessionItem"><div class="sessionTop"><span>${new Date(s.date).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})} · ${new Date(s.date).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}</span><span>${fmt(s.avg)}</span></div><div class="sessionMeta">${s.intervals.length} cars · median ${fmt(s.median)} · ${s.bucket}</div></div>`).join("");
+}
+function rows(g){return Object.entries(g).sort((a,b)=>a[1].avg-b[1].avg).map(([k,v])=>`<div class="row"><span>${k}</span><span><b>${fmt(v.avg)}</b> <span class="muted">(${v.n} cars)</span></span></div>`).join("")}
+function renderInsights(){
+ const h=history(),all=h.flatMap(s=>s.intervals);$("visitCount").textContent=h.length;$("intervalCount").textContent=all.length;
+ let dg={},tg={},cg={};h.forEach(s=>{(dg[s.day]??=[]).push(...s.intervals);(tg[s.bucket]??=[]).push(...s.intervals);let k=`${s.day} · ${s.bucket}`;(cg[k]??=[]).push(...s.intervals)});
+ const map=o=>Object.fromEntries(Object.entries(o).map(([k,a])=>[k,{avg:mean(a),n:a.length}]));
+ dg=map(dg);tg=map(tg);$("dayStats").innerHTML=Object.keys(dg).length?rows(dg):'<div class="empty">No data yet.</div>';$("timeStats").innerHTML=Object.keys(tg).length?rows(tg):'<div class="empty">No data yet.</div>';
+ const valid=Object.entries(cg).filter(([k,a])=>a.length>=3).map(([k,a])=>[k,mean(a),a.length]).sort((a,b)=>a[1]-b[1]);
+ $("bestWindow").innerHTML=valid.length?`<div class="big good">${valid[0][0]}</div><div class="muted" style="margin-top:7px">Observed average ${fmt(valid[0][1])} across ${valid[0][2]} cars.</div>`:'<div class="empty">Log a few visits and I’ll start judging your car-wash decisions.</div>';
+}
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");["live","history","insights"].forEach(id=>$(id).classList.toggle("hidden",id!==b.dataset.tab));renderHistory();renderInsights()}));
+$("clear").addEventListener("click",()=>{if(confirm("Delete all WashWatch history on this device?")){saveHistory([]);renderHistory();renderInsights()}});
+$("export").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(history(),null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=`washwatch-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)});
+$("dateLine").textContent=new Date().toLocaleString(undefined,{weekday:"long",month:"long",day:"numeric",hour:"numeric",minute:"2-digit"});
+const standalone=window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true;if(!standalone)$("installHint").style.display="block";
+if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+render();renderHistory();renderInsights();
+</script></body></html>
