@@ -48,7 +48,7 @@ input{width:75px;background:#0d1118;color:white;border:1px solid #39445a;border-
 <div class="hint" id="hint">First tap starts the session. Every tap after that records the interval since the previous car.</div>
 <div class="actions"><button class="secondary" id="undo">↶ Undo</button><button class="secondary danger" id="finish">Finish & Save</button></div>
 </div>
-<div class="card estimate"><div><div class="label">Cars ahead of me</div><input id="ahead" type="number" min="0" inputmode="numeric" value="0"></div><div style="text-align:right"><div class="label">Estimated wait</div><strong id="wait">—</strong></div></div>
+<div class="card estimate"><div><div class="label">Cars ahead of me</div><input id="ahead" type="number" min="0" inputmode="numeric" value="0"></div><div style="text-align:right"><div class="label">Estimated wait</div><strong id="wait">—</strong><div class="label" style="margin-top:8px">Estimated turn</div><strong id="turn">—</strong></div></div>
 <div class="grid section"><div class="card"><div class="label">Fastest</div><div class="big good" id="fast">—</div></div><div class="card"><div class="label">Slowest</div><div class="big bad" id="slow">—</div></div></div>
 </section>
 
@@ -75,13 +75,13 @@ function saveHistory(v){localStorage.setItem("washwatch.history",JSON.stringify(
 function render(){
  $("cars").textContent=intervals.length;$("avg").textContent=fmt(mean(intervals));$("median").textContent=fmt(median(intervals));$("last").textContent=intervals.length?fmt(intervals.at(-1)):"—";
  $("fast").textContent=intervals.length?fmt(Math.min(...intervals)):"—";$("slow").textContent=intervals.length?fmt(Math.max(...intervals)):"—";
- const n=Math.max(0,parseInt($("ahead").value)||0);$("wait").textContent=intervals.length&&n?fmt(mean(intervals)*n):"—";
+ const n=Math.max(0,parseInt($("ahead").value)||0), waitMs=intervals.length&&n?mean(intervals)*n:null;$("wait").textContent=waitMs?fmt(waitMs):"—";$("turn").textContent=waitMs?new Date(Date.now()+waitMs).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"}):"—";
 }
 function startTicker(){clearInterval(tick);tick=setInterval(()=>{if(lastWall!==null)$("timer").textContent=fmt(Date.now()-lastWall)},100)}
 $("pass").addEventListener("click",()=>{
  const now=Date.now();
  if(!startedDate){startedDate=new Date();lastWall=now;$("sessionState").textContent="TIMING";$("hint").textContent="Started. Next tap records Car #1.";startTicker();return}
- intervals.push(now-lastWall);lastWall=now;$("hint").textContent=`Car #${intervals.length} recorded: ${fmt(intervals.at(-1))}`;render();
+ intervals.push(now-lastWall);lastWall=now;const ahead=Math.max(0,parseInt($("ahead").value)||0);if(ahead>0)$("ahead").value=ahead-1;$("hint").textContent=`Car #${intervals.length} recorded: ${fmt(intervals.at(-1))}`;render();
  if(navigator.vibrate)navigator.vibrate(20);
 });
 $("undo").addEventListener("click",()=>{if(intervals.length){intervals.pop();$("hint").textContent="Last recorded interval removed.";render()}});
